@@ -1,0 +1,22 @@
+# 2-D boundary description
+# "#" is the comment line signal
+# *SIZE= How many loops do we have in the boundary :
+# go ccw for externl and CW for internal boundaries 
+#*LOOP is to list the segents in a loops 
+# Dont put comments in the loop section 
+#each segement has 
+#Number of points, Order of spline, 
+#whther it is periodic or not (for smooth closed loops like holes) 
+#points x,y,x,y,x,y etc 
+#NUMBER OF POINTS MUST AT LEAST BE ONE MORE THAN SPLINE ORDER 
+#*END is the end of the file 
+*SIZE
+1
+*LOOP
+20,1, 0,-1,-1, 1,-1
+10,1,0, 1,-1, 1,-0.3333
+10,2,0,1,-0.3333, 0.6667,0,1,0.3333
+10,1,0, 1,0.3333, 1,1
+20,1,0, 1,1, -1,1
+20,1,0, -1,1, -1,-1
+*END
