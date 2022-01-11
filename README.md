@@ -16,4 +16,8 @@
  mesh=pimesh(vertices)
 ``` 
 
+## Features
+* Potential based node adjustment
+* Support for on the go mesh refinement
 
+## How can I cite this library?
