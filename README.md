@@ -13,7 +13,8 @@
  import numpy as np
  import pimesh
  vertices=[]
- mesh=pimesh(vertices)
+ injectionPoints=[]
+ mesh=pimesh(vertices,injectionPoints)
 ``` 
 
 ## Features
