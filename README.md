@@ -1,4 +1,4 @@
-# PIMESH
+# PIMesh
 
  PIMesh is a python library for generating triangular mesh.
 
@@ -9,10 +9,11 @@
  PIMesh depends on [numpy](http://www.numpy.org/). 
 
  ## Quick Start
- '''python
+```python
  import numpy as np
  import pymesh
+ vertices=[]
  mesh=pymesh(vertices)
- '''
+``` 
 
 
