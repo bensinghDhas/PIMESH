@@ -68,9 +68,9 @@ class FlowMesherPython():
         data = np.loadtxt(inputFile, delimiter=delim, dtype=np.intc,max_rows=1)
         self.N_SEGMENT_NODES=np.cumsum(data[1:])
         self.N_BDRY_SEGMENTS=data[0]
-        self.N_BNODES=sum(data[1:])
+        self.N_BNODES=int(sum(data[1:]))
 
-        self.BRm=np.loadtxt(inputFile, delimiter=delim, dtype=np.single,max_rows=self.N_BNODES,usecols=[0,1]) 
+        self.BRm=np.loadtxt(inputFile, delimiter=delim, dtype=np.single, max_rows=self.N_BNODES, usecols=[0,1]) 
         #now find the injection locations 
         self.N_INJ=np.loadtxt(inputFile, delimiter=delim, dtype=np.intc,max_rows=1).item() 
         
@@ -85,9 +85,7 @@ class FlowMesherPython():
                 self.REFINEMENT_DATA.append(np.loadtxt(inputFile, delimiter=delim, dtype=np.single,max_rows=1))
         inputFile.close()
         self.constrained_edges=[]# needed for Boundary Condition Specification
-        
-    
-        return
+
 #_________________________
     def initialize_geometry(self):
         # create tangent vectors 
@@ -96,7 +94,7 @@ class FlowMesherPython():
         for i in self.N_SEGMENT_NODES:
             self.TGTm[start:i,:]=np.diff(self.BRm[start:i,:], axis=0,append=[self.BRm[start,:]])
             start=i
-        refinedarea=self.__find_refined_area()
+        refinedarea=self.find_refined_area()
        
         # #Area= xdy-ydx
         AREA=(sum(self.BRm[:,0]*self.TGTm[:,1]-self.BRm[:,1]*self.TGTm[:,0]))/2
@@ -145,8 +143,6 @@ class FlowMesherPython():
         self.MIN=np.min(self.BRm,axis=0)-2*self.R0
         self.MIN_X,self.MAX_X=self.MIN[0],self.MAX[0]
         self.MIN_Y,self.MAX_Y=self.MIN[1],self.MAX[1]
-        return
-        #__________________________________________        
     
     def showgrid(self):
         plt.close('all')
@@ -165,7 +161,7 @@ class FlowMesherPython():
         # this writes output to the file also
 # #____________________________#________________________#_________________#
 
-    def __find_refined_area(self):
+    def find_refined_area(self):
         refinedarea=0
         if (self.N_REFINEMENTS>0):
             for refi in self.REFINEMENT_DATA:
@@ -178,7 +174,7 @@ class FlowMesherPython():
 # #cdef functions for doing the cals go here 
 
 #___________________________________________________________________________________________
-    def _move_node_c(self, MAX_ITER):
+    def move_node_c(self, MAX_ITER):
         if (self.nodetype==-1):
             inputFile=open(self.fname,'r')
             self.NODE_TYPES[:self.N_BNODES]= np.loadtxt(inputFile, delimiter=self.delim, dtype=np.intc,max_rows=self.N_BNODES,usecols=[2],skiprows=3) 
@@ -189,8 +185,9 @@ class FlowMesherPython():
         ref_lengths=np.array([0]+[len(x) for x in self.REFINEMENT_DATA],dtype=np.intc)
         ref_v=np.array([x for array in self.REFINEMENT_DATA for x in array],dtype=np.single)
         print(ref_lengths,ref_v)
+
+        #C function call
         mydir=os.getcwd()+"/move_nodes_ctypes.so"
-        #"/media/arun/ARUN_PROG/PROGRAMMING/MeshGenerator/move_nodes_ctypes.so"
         my_functions=ctypes.cdll.LoadLibrary(mydir)
         fun =my_functions.f_moveNodes
         fun.restype = ctypes.c_double

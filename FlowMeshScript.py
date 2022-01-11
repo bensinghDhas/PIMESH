@@ -12,7 +12,7 @@ import FlowMesherPythonBC as FM
 wm=FM.FlowMesherPython("./examples/hole_bdrypts.txt")
 wm.showgrid()
 
-wm._move_node_c(3000)
+wm.move_node_c(3000)
 # #wedgemesh._move_node_function(100)
 wm.triangulate()
 # fin=time.time()
