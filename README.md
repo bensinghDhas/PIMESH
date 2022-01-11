@@ -1,2 +1,2 @@
 # PIMESH
- Mesh generation software
+ A python library for generating triangular mesh.
