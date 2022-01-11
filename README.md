@@ -11,9 +11,9 @@
  ## Quick Start
 ```python
  import numpy as np
- import pymesh
+ import pimesh
  vertices=[]
- mesh=pymesh(vertices)
+ mesh=pimesh(vertices)
 ``` 
 
 
