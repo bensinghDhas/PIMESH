@@ -2,6 +2,9 @@ import numpy as np
 import ctypes
 import os
 from scipy.spatial import Delaunay
+from numpy.ctypeslib import ndpointer
+import matplotlib.pylab as plt
+
 
 def initializeGeometry(BRm,N_SEGMENT_NODES,N_BNODES,N_INJ,INJ_DATA, noRefine, RefineData):
     # create tangent vectors 
@@ -52,11 +55,11 @@ def initializeGeometry(BRm,N_SEGMENT_NODES,N_BNODES,N_INJ,INJ_DATA, noRefine, Re
         ys[i+j_start]+=INJ_DATA[j,1]
         j=j+1
 
-    # MAX=np.max(self.BRm,axis=0)+2*self.R0
-    # self.MIN=np.min(self.BRm,axis=0)-2*self.R0
-    # self.MIN_X,self.MAX_X=self.MIN[0],self.MAX[0]
-    # self.MIN_Y,self.MAX_Y=self.MIN[1],self.MAX[1]
-    return xs, ys
+    MAX=np.max(BRm,axis=0)+2*R0
+    MIN=np.min(BRm,axis=0)-2*R0
+    MIN_X,MAX_X=MIN[0],MAX[0]
+    MIN_Y,MAX_Y=MIN[1],MAX[1]
+    return data, tgt_v, NODE_TYPES, N_INODES, N_TOTAL, R0, MIN_X, MIN_Y, MAX_X, MAX_Y
 
 def find_refined_area(REFINEMENT_DATA,N_REFINEMENTS):
     refinedarea=0
@@ -69,7 +72,7 @@ def find_refined_area(REFINEMENT_DATA,N_REFINEMENTS):
             refinedarea+=((sum(X[:-1,0]*tgt[:,1]-X[:-1,1]*tgt[:,0]))/2)*(1+ht)**2
     return refinedarea
 
-def moveNodes(self, N_BNODES,NODE_TYPES, nodetype,REFINEMENT_DATA, fname, MAX_ITER):
+def moveNodes(data, tgt_v, N_BNODES, NODE_TYPES, nodetype, REFINEMENT_DATA, N_TOTAL, N_INODES, N_REFINEMENTS,R0, MIN_X, MAX_X, MIN_Y, MAX_Y, fname, MAX_ITER):
     if (nodetype==-1):
         inputFile=open(fname,'r')
         NODE_TYPES[:N_BNODES]= np.loadtxt(inputFile, delimiter=' ', dtype=np.intc,max_rows=N_BNODES,usecols=[2],skiprows=3) 
@@ -103,97 +106,10 @@ def moveNodes(self, N_BNODES,NODE_TYPES, nodetype,REFINEMENT_DATA, fname, MAX_IT
         # fun.argtypes=[ndpointer(ctypes.c_float, ndim=1, flags="C_CONTIGUOUS")]
         # fun(self.data)
     success=fun(data, NODE_TYPES, tgt_v, theNSIZES,theDIMS,ref_lengths,ref_v,MAX_ITER)
-    return tri
-
-def triangulate(rs, inNodetypes,tgtm,filename):
-    xs=rs[0,:]
-    ys=rs[1,:]
-    n_nodes=np.size(xs)
-    n_bnodes=sum(inNodetypes>0) # this is the number of boundary nodes
-    n_inodes=n_nodes-n_bnodes
-    tri=Delaunay(rs.T)
-    Elements=tri.simplices# arrange the node numbers in ascending order.
-    N_TRIANGLES=len(Elements)
-    element_types=np.zeros(N_TRIANGLES, dtype=np.int16)
-    x=np.zeros(4)
-    y=np.zeros(4)
-    # for i in (Elements):
-    #     r01=pts[i[1],:]-pts[i[0],:]
-    #     r02=pts[i[2],:]-pts[i[0],:]
-    #     A=r01[0]*r02[1]-r01[1]*r02[0]
-    #     if (A<0):
-    #         temp=i[2]
-    #         i[2]=i[1]
-    #         i[1]=temp
-    centroid=np.zeros(2,dtype=np.single)    
-    for index, i in enumerate(Elements):#{
-        if(sum(inNodetypes[i]>0)>2): # no nodes outside so all three are boundary nodes 
-            centroid[:]=[sum(xs[i])/3,sum(ys[i]/3)]
-            x[0:3]=xs[i]
-            y[0:3]=ys[i]
-            for j in range(3):
-                ny=tgtm[i[j],0]
-                nx=tgtm[i[j],1]
-                ny=-ny
-                r=centroid-[x[j],y[j]]
-                if(nx*r[0]+ny*r[1]>0):#{ # if centroid is outside the boundary
-                        element_types[index]=-1 
-    # j=0
-    # # PLOTTING HERE_________________
-    # # N_bdrys=np.max(inNodetypes)
-    # # colors = cm.rainbow(np.linspace(0, 1, N_bdrys+1))
-    # for idx, i in zip(element_types,Elements):#{
-    #     if(idx==0):#{
-    #         j=j+1
-    #         x[0:3]=xs[i]
-    #         y[0:3]=ys[i]
-    #         x[3],y[3]=xs[i[0]],ys[i[0]]
-    #         pyp.plot(x,y,color='k')
-    
-    # pyp.scatter(x=xs, y=ys, c=inNodetypes, cmap="rainbow")
-    # # for idx,x,y in zip(inNodetypes,xs,ys):
-    # #     pyp.plot(x,y,'.',color=colors[idx])
-    # # pyp.
-    # pyp.colorbar(label="Node Types", orientation="horizontal")
-    
-    # #WRITING TO FILE___________________________________
-    # loc=filename.rfind('.')
-    # with open(filename,"w+") as f:
-    #     f.write("#"+filename[:loc]+":NODES="+str(n_nodes)+', BOUNDARY_NODES='+str(n_bnodes)+"\n")
-    #     for x,y  in zip(xs,ys):
-    #         f.write(str(x)+' '+str(y)+'\n')
-    # #felem=filename[:loc]+'_elements'+filename[loc:]
-    # #with open(felem,"w+") as f:
-    #     f.write("#"+filename[:loc]+":ELEMENTS="+str(j)+'\n')
-    #     for ithelem,ithtri in zip(Elements, element_types):
-    #         if(ithtri==0): # if it is a legit node
-    #             f.write("1 "+str(ithelem[0])+' '+str(ithelem[1])+' '+str(ithelem[2])+'\n')
-    
-    # f2=filename[:loc]+"_T"+filename[loc:]
-    # with open(f2,"w+") as f:
-    #     f.write("#"+filename[:loc]+":NODES="+str(n_nodes)+', BOUNDARY_NODES='+str(n_bnodes)+"\n")
-    #     for r  in rs:
-    #         for i in r:
-    #             f.write(str(i)+" ")
-    #         f.write("\n")
-    
-    #     f.write("#"+filename[:loc]+":ELEMENTS="+str(j)+'\n')
-    #     for ithelem,ithtri in zip(Elements, element_types):
-    #         if(ithtri==0): # if it is a legit node
-    #             f.write("1 "+str(ithelem[0])+' '+str(ithelem[1])+' '+str(ithelem[2])+'\n')
-                
-    
-    # with open(filename,"w+") as f:
-    #     f.write('# Number of Nodes, Number of Boundary Nodes and Number of Elements\n')
-    #     f.write(str(n_nodes)+','+str(n_bnodes)+','+str(j)+'\n')
-    #     f.write("#nodal location and type: (type useful for different degrees of freedom or boundary conditions or forces etc) ")
-    #     for ithpt,ithnode  in zip(pts,inNodetypes):
-    #         f.write(str(ithpt[0])+','+str(ithpt[1])+','+str(ithnode)+'\n')
-    #     f.write("#Elements connectivity")
-    #     for ithelem,ithtri in zip(Elements, element_types):
-    #         if(ithtri==0): # if it is a legit node
-    #             f.write(str(ithelem[0])+','+str(ithelem[1])+','+str(ithelem[2])+'\n')
-             
-         
-         
+    plt.plot(data[0:N_TOTAL],data[(N_TOTAL):(2*N_TOTAL)],'o')
+    pos=np.column_stack((data[0:N_TOTAL],data[N_TOTAL:(2*N_TOTAL)]))
+    # data=np.reshape(data[0:(2*N_TOTAL)],(N_TOTAL,2))
+    # plt.plot(pos[:,0],pos[:,1],'o')
+    # plt.show()
+    tri=Delaunay(pos)
     return tri
